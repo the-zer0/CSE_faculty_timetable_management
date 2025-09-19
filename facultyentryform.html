@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Faculty Timetable Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f5f7fa; color: #333; line-height: 1.6; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background-color: white; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); padding: 30px; }
+    header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eaeaea; }
+    h1 { color: #2c3e50; margin-bottom: 10px; }
+    .description { color: #7f8c8d; font-size: 1.1em; }
+    .input-section { margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; }
+    input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+    .timetable-grid { display: grid; grid-template-columns: 100px repeat(6, 1fr); gap: 10px; margin-bottom: 30px; }
+    .grid-header { background-color: #2c3e50; color: white; padding: 15px; text-align: center; font-weight: 600; border-radius: 4px; }
+    .grid-cell { padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 80px; background-color: white; cursor: pointer; transition: all 0.2s; }
+    .grid-cell:hover { background-color: #e8f4fc; border-color: #3498db; }
+    .grid-cell.leisure { background-color: #f8f9fa; }
+    .grid-cell.class { background-color: #e8f5e9; border-color: #2ecc71; }
+    .period-label { background-color: #34495e; color: white; padding: 15px; text-align: center; font-weight: 600; border-radius: 4px; }
+    .button-group { display: flex; justify-content: center; gap: 15px; margin-top: 30px; flex-wrap: wrap; }
+    button { padding: 12px 25px; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    #saveToDb { background-color: #3498db; color: white; }
+    #saveToDb:hover { background-color: #2980b9; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background-color: white; padding: 30px; border-radius: 8px; width: 400px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+    .modal h2 { margin-bottom: 20px; color: #2c3e50; }
+    .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .modal-buttons button { padding: 8px 16px; }
+    #cancelBtn { background-color: #95a5a6; color: white; }
+    #saveBtn { background-color: #3498db; color: white; }
+    .success-message { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 4px; margin-top: 20px; text-align: center; display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Faculty Timetable Generator</h1>
+      <p class="description">Create timetable for faculty members. Click on a cell to add class details.</p>
+    </header>
+    
+    <div class="input-section">
+      <div class="form-group">
+        <label for="facultyName">Faculty Name:</label>
+        <input type="text" id="facultyName" placeholder="e.g., Dr B RAVEENDRANADH">
+      </div>
+    </div>
+    
+    <h2>Weekly Timetable</h2>
+    <div class="timetable-grid" id="timetableGrid"></div>
+    
+    <div class="button-group">
+      <button id="saveToDb">Save to Supabase</button>
+    </div>
+    
+    <div id="successMessage" class="success-message">
+      Timetable saved successfully!
+    </div>
+  </div>
+  
+  <!-- Modal -->
+  <div id="classModal" class="modal">
+    <div class="modal-content">
+      <h2>Enter Class Details</h2>
+      <div class="form-group">
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" placeholder="e.g., DECO or COSM">
+      </div>
+      <div class="form-group">
+        <label for="classroom">Classroom:</label>
+        <input type="text" id="classroom" placeholder="e.g., III C or II A">
+      </div>
+      <div class="modal-buttons">
+        <button id="cancelBtn">Cancel</button>
+        <button id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+
+  const SUPABASE_URL = 'https://ucihhvycupjjkmazpfby.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjaWhodnljdXBqamttYXpwZmJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxODQ5MjcsImV4cCI6MjA3Mzc2MDkyN30.XeWpXOmiZS1Z8ejDfnNZ89NiIBoDKTgogOeNDg-Rv8A';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+  // Elements
+  const facultyNameInput = document.getElementById('facultyName');
+  const timetableGrid = document.getElementById('timetableGrid');
+  const saveToDbBtn = document.getElementById('saveToDb');
+  const classModal = document.getElementById('classModal');
+  const subjectInput = document.getElementById('subject');
+  const classroomInput = document.getElementById('classroom');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const successMessage = document.getElementById('successMessage');
+
+  // State
+  let currentCell = null;
+  let timetableData = [];
+  let nextId = 1;
+
+  // Build timetable grid with days as rows and periods as columns
+  function buildGrid() {
+    timetableGrid.innerHTML = `
+      <div class="grid-header">Period/Day</div>
+      <div class="grid-header">Period 1</div>
+      <div class="grid-header">Period 2</div>
+      <div class="grid-header">Period 3</div>
+      <div class="grid-header">Period 4</div>
+      <div class="grid-header">Period 5</div>
+      <div class="grid-header">Period 6</div>
+    `;
+    
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    for (let day = 1; day <= 6; day++) {
+      timetableGrid.innerHTML += `<div class="period-label">${dayNames[day-1]}</div>`;
+      for (let period = 1; period <= 6; period++) {
+        timetableGrid.innerHTML += `<div class="grid-cell leisure" data-day="${day}" data-period="${period}"></div>`;
+      }
+    }
+  }
+
+  function initializeTimetableData() {
+    timetableData = [];
+    nextId = 1;
+    for (let day = 1; day <= 6; day++) {
+      for (let period = 1; period <= 6; period++) {
+        timetableData.push({
+          id: nextId++,
+          faculty_name: facultyNameInput.value || '',
+          classroom: '',
+          day_id: day,
+          period_id: period,
+          subject: '',
+          is_leisure: true
+        });
+      }
+    }
+  }
+
+  // Clear the table after saving
+  function clearTable() {
+    const cells = document.querySelectorAll('.grid-cell');
+    cells.forEach(cell => {
+      cell.classList.remove('class');
+      cell.classList.add('leisure');
+      cell.innerHTML = '';
+    });
+    
+    initializeTimetableData();
+    facultyNameInput.value = '';
+  }
+
+  buildGrid();
+  initializeTimetableData();
+
+  // Cell clicks
+  timetableGrid.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('grid-cell')) return;
+    currentCell = e.target;
+    const day = currentCell.dataset.day;
+    const period = currentCell.dataset.period;
+    const entry = timetableData.find(x => x.day_id == day && x.period_id == period);
+    subjectInput.value = entry.subject;
+    classroomInput.value = entry.classroom;
+    classModal.style.display = 'flex';
+  });
+
+  cancelBtn.addEventListener('click', () => classModal.style.display = 'none');
+
+  saveBtn.addEventListener('click', () => {
+    if (!currentCell) return;
+    const day = currentCell.dataset.day;
+    const period = currentCell.dataset.period;
+    const entry = timetableData.find(x => x.day_id == day && x.period_id == period);
+
+    const hasSubject = subjectInput.value.trim() !== '';
+    entry.subject = subjectInput.value.trim();
+    entry.classroom = hasSubject ? classroomInput.value.trim() : '';
+    entry.is_leisure = !hasSubject;
+    entry.faculty_name = facultyNameInput.value || '';
+
+    if (hasSubject) {
+      currentCell.classList.remove('leisure');
+      currentCell.classList.add('class');
+      currentCell.innerHTML = `<strong>${entry.subject}</strong><br>${entry.classroom || ''}`;
+    } else {
+      currentCell.classList.remove('class');
+      currentCell.classList.add('leisure');
+      currentCell.innerHTML = '';
+    }
+    classModal.style.display = 'none';
+  });
+
+  // Supabase save
+  saveToDbBtn.addEventListener('click', async () => {
+    if (!facultyNameInput.value.trim()) {
+      alert('Please enter faculty name');
+      return;
+    }
+    timetableData.forEach(item => item.faculty_name = facultyNameInput.value);
+
+    const rows = timetableData.map(item => ({
+      faculty_name: item.faculty_name,
+      classroom: item.is_leisure ? null : item.classroom,
+      day_id: item.day_id,
+      period_id: item.period_id,
+      subject: item.is_leisure ? null : item.subject,
+      is_leisure: item.is_leisure
+    }));
+
+    const { error } = await supabase.from('timetable').upsert(rows, {
+      onConflict: ['faculty_name','day_id','period_id']
+    });
+
+    if (error) {
+      alert('Error saving to Supabase: ' + error.message);
+      console.error(error);
+    } else {
+      alert('Timetable saved to Supabase successfully!');
+      clearTable();
+    }
+  });
+
+  </script>
+  <script>
+    if (!localStorage.getItem("loggedIn")) {
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>

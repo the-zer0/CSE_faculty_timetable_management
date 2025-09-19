@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 50px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    .btn {
+      padding: 12px 20px;
+      margin: 10px;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+    .logout {
+      margin-top: 20px;
+      background: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to Admin Dashboard</h1>
+  <button class="btn" onclick="goPage('activeandinactive.html')">Manage Faculty</button>
+  <button class="btn" onclick="goPage('edittimetable.html')">Edit Time Table</button>
+  <button class="btn" onclick="goPage('facultyentryform.html')">Faculty Entry Form</button>
+  <button class="btn logout" onclick="logout()">Logout</button>
+
+  <script>
+    // Check if logged in
+    if (!localStorage.getItem("loggedIn")) {
+      window.location.href = "login.html";
+    }
+
+    function goPage(page) {
+      window.location.href = page;
+    }
+
+    function logout() {
+      localStorage.removeItem("loggedIn");
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>

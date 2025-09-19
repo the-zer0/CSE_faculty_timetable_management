@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Faculty Records</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      margin: 0; padding: 20px;
+    }
+    .container {
+      max-width: 900px; margin: auto; background: white;
+      border-radius: 10px; padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center; margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd; padding: 12px; text-align: left;
+    }
+    th { background: #f8f9fa; }
+    .btn {
+      padding: 6px 12px; border: none; border-radius: 4px;
+      cursor: pointer; font-weight: 600;
+    }
+    .btn-delete { background: #e74c3c; color: white; }
+    .btn-restore { background: #27ae60; color: white; }
+    .status-active {
+      background: #e8f5e9; color: #27ae60; padding: 5px 10px;
+      border-radius: 20px; font-size: 0.85em;
+    }
+    .status-deleted {
+      background: #fdedec; color: #e74c3c; padding: 5px 10px;
+      border-radius: 20px; font-size: 0.85em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Manage Faculty Records</h1>
+    <div id="facultyTable">Loading faculty...</div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+
+    const SUPABASE_URL = 'https://ucihhvycupjjkmazpfby.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjaWhodnljdXBqamttYXpwZmJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxODQ5MjcsImV4cCI6MjA3Mzc2MDkyN30.XeWpXOmiZS1Z8ejDfnNZ89NiIBoDKTgogOeNDg-Rv8A';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const facultyTable = document.getElementById('facultyTable');
+
+    // Fetch unique faculty names and their status
+    async function loadFaculty() {
+      const { data, error } = await supabase
+        .from('timetable')
+        .select('faculty_name, is_active')
+        .order('faculty_name');
+
+      if (error) {
+        console.error(error);
+        facultyTable.innerHTML = '<p>Error loading faculty list</p>';
+        return;
+      }
+
+      // Deduplicate by faculty_name (take first occurrence)
+      const facultyMap = new Map();
+      data.forEach(row => {
+        if (!facultyMap.has(row.faculty_name)) {
+          facultyMap.set(row.faculty_name, row.is_active);
+        }
+      });
+
+      const faculty = Array.from(facultyMap.entries());
+
+      facultyTable.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Faculty Name</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${faculty.map(([name, active]) => `
+              <tr>
+                <td>${name}</td>
+                <td>
+                  <span class="${active ? 'status-active' : 'status-deleted'}">
+                    ${active ? 'Active' : 'Deleted'}
+                  </span>
+                </td>
+                <td>
+                  ${active 
+                    ? `<button class="btn btn-delete" data-name="${name}">Delete</button>` 
+                    : `<button class="btn btn-restore" data-name="${name}">Restore</button>`}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      // Attach button listeners
+      document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => updateFacultyStatus(btn.dataset.name, false));
+      });
+      document.querySelectorAll('.btn-restore').forEach(btn => {
+        btn.addEventListener('click', () => updateFacultyStatus(btn.dataset.name, true));
+      });
+    }
+
+    // Update faculty active/deleted status
+    async function updateFacultyStatus(name, isActive) {
+      const { error } = await supabase
+        .from('timetable')
+        .update({ is_active: isActive })
+        .eq('faculty_name', name);
+
+      if (error) {
+        alert('Error updating: ' + error.message);
+        console.error(error);
+      } else {
+        alert(`${name} has been ${isActive ? 'restored' : 'deleted'}.`);
+        loadFaculty(); // refresh
+      }
+    }
+
+    loadFaculty();
+  </script>
+  <script>
+    if (!localStorage.getItem("loggedIn")) {
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>
