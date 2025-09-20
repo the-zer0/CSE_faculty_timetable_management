@@ -1,125 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Faculty Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Class Dashboard</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    body {
-      background-color: #f5f7fa;
-      color: #333;
-      line-height: 1.6;
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #f5f7fa; padding: 20px; color: #333; }
+
+    .container { max-width: 1200px; margin: auto; }
+
+    header { text-align: center; margin-bottom: 30px; }
+    header h1 { font-size: 1.8rem; color: #2c3e50; margin-bottom: 10px; }
+    header p { color: #7f8c8d; }
+
+    .period-card {
+      background: #fff;
+      border-radius: 12px;
       padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
     }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-      padding: 30px;
-    }
-    header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid #eaeaea;
-    }
-    h1 {
-      color: #2c3e50;
-      margin-bottom: 10px;
-    }
-    h2 {
-      color: #2c3e50;
+
+    .period-card h2 {
+      font-size: 1.3rem;
       margin-bottom: 15px;
-      padding-bottom: 10px;
       border-bottom: 2px solid #3498db;
-    }
-    #current-date {
-      color: #7f8c8d;
-      font-size: 1.1em;
-    }
-    .table-container {
-      background-color: white;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #eaeaea;
-    }
-    th {
-      background-color: #f8f9fa;
-      font-weight: 600;
+      padding-bottom: 8px;
       color: #2c3e50;
     }
-    tr:hover {
-      background-color: #f5f7fa;
-    }
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #7f8c8d;
-    }
-    .card {
-      background-color: white;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-      margin-bottom: 20px;
-    }
-    form {
+
+    .period-inner {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      align-items: end;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
     }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #2c3e50;
+
+    .sub-card {
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-    select, input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 16px;
+
+    .sub-card h3 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      color: #34495e;
     }
-    .btn {
-      padding: 10px 20px;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    .btn:hover {
-      background-color: #2980b9;
-    }
-    footer {
-      text-align: center;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #eaeaea;
-      color: #7f8c8d;
-    }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eaeaea; }
+    th { background: #f8f9fa; font-weight: 600; color: #2c3e50; }
+
     .status-badge {
       display: inline-block;
       padding: 5px 10px;
@@ -127,18 +60,12 @@
       font-size: 0.85em;
       font-weight: 600;
     }
-    .status-teaching {
-      background-color: #e8f5e9;
-      color: #27ae60;
-    }
-    .status-free {
-      background-color: #fdedec;
-      color: #e74c3c;
-    }
+
+    .status-teaching { background: #e8f5e9; color: #27ae60; }
+    .status-free { background: #fdedec; color: #e74c3c; }
+
     @media (max-width: 768px) {
-      form {
-        grid-template-columns: 1fr;
-      }
+      .period-inner { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -146,327 +73,222 @@
   <div class="container">
     <header>
       <h1>📚 Faculty Class Dashboard</h1>
-      <p id="current-date"></p>
+      <p id="datetime">Loading date & time...</p>
     </header>
-    
-    <main>
-      <!-- 📌 Live Dashboard -->
-      <section>
-        <h2>Ongoing Classes</h2>
-        <div class="table-container" id="dashboard">
-          <p class="loading">Loading timetable...</p>
+
+    <!-- Current Period -->
+    <div class="period-card">
+      <h2>Current Period</h2>
+      <div class="period-inner">
+        <div class="sub-card">
+          <h3>Teaching</h3>
+          <table id="current-teaching">
+            <thead>
+              <tr><th>Faculty</th><th>Subject</th><th>Classroom</th><th>Status</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-        
-        <h2>Free / Leisure Faculty</h2>
-        <div class="table-container" id="leisure-dashboard">
-          <p class="loading">Loading leisure data...</p>
+        <div class="sub-card">
+          <h3>Free Faculty</h3>
+          <table id="current-free">
+            <thead>
+              <tr><th>Faculty</th><th>Status</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-      </section>
-      
-      <!-- 📌 Leisure Finder -->
-      <section>
-        <button id="toggle-filter" type="button" class="btn">Show Leisure Finder</button>
-        
-        <form id="leisure-form" style="display:none; margin-top:1rem;" class="card">
-          <div>
-            <label for="day">Day:</label>
-            <select id="day" name="day" required>
-              <option value="">--Select Day--</option>
-              <option value="1">Monday</option>
-              <option value="2">Tuesday</option>
-              <option value="3">Wednesday</option>
-              <option value="4">Thursday</option>
-              <option value="5">Friday</option>
-              <option value="6">Saturday</option>
-            </select>
-          </div>
-          
-          <div>
-            <label for="period">Period:</label>
-            <select id="period" name="period" required>
-              <option value="">--Select Period--</option>
-              <option value="1">Period 1</option>
-              <option value="2">Period 2</option>
-              <option value="3">Period 3</option>
-              <option value="4">Period 4</option>
-              <option value="5">Period 5</option>
-              <option value="6">Period 6</option>
-            </select>
-          </div>
-          
-          <div>
-            <button type="submit" class="btn">Find Leisure Faculty</button>
-          </div>
-        </form>
-        
-        <div id="leisure-results" class="table-container" style="margin-top:1rem;"></div>
-      </section>
-    </main>
-    
-    <footer>
-      <p>&copy; 2025 Faculty Dashboard</p>
-    </footer>
+      </div>
+    </div>
+
+    <!-- Next Period -->
+    <div class="period-card">
+      <h2>Next Period</h2>
+      <div class="period-inner">
+        <div class="sub-card">
+          <h3>Teaching</h3>
+          <table id="next-teaching">
+            <thead>
+              <tr><th>Faculty</th><th>Subject</th><th>Classroom</th><th>Status</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="sub-card">
+          <h3>Free Faculty</h3>
+          <table id="next-free">
+            <thead>
+              <tr><th>Faculty</th><th>Status</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js';
-    
-    // Supabase configuration
-    const SUPABASE_URL = 'https://ucihhvycupjjkmazpfby.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjaWhodnljdXBqamttYXpwZmJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxODQ5MjcsImV4cCI6MjA3Mzc2MDkyN30.XeWpXOmiZS1Z8ejDfnNZ89NiIBoDKTgogOeNDg-Rv8A';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    
-    // DOM elements
-    const currentDateElement = document.getElementById('current-date');
-    const dashboardElement = document.getElementById('dashboard');
-    const leisureDashboardElement = document.getElementById('leisure-dashboard');
-    const toggleFilterButton = document.getElementById('toggle-filter');
-    const leisureForm = document.getElementById('leisure-form');
-    const leisureResultsElement = document.getElementById('leisure-results');
-    
-    // Period schedule
-    const periodSchedule = [
-      { id: 1, start: '09:20', end: '10:20' },
-      { id: 2, start: '10:20', end: '11:20' },
-      { id: 3, start: '11:20', end: '12:20' },
-      { id: 4, start: '13:10', end: '14:10' },
-      { id: 5, start: '14:10', end: '15:10' },
-      { id: 6, start: '15:10', end: '16:10' }
-    ];
-    
-    // Initialize the dashboard
-    function initDashboard() {
-      updateDateTime();
-      updateDashboard();
-      
-      // Update time every second
-      setInterval(updateDateTime, 1000);
-      
-      // Update dashboard every minute
-      setInterval(updateDashboard, 60000);
-      
-      // Set up event listeners
-      toggleFilterButton.addEventListener('click', () => {
-        const isVisible = leisureForm.style.display === 'block';
-        leisureForm.style.display = isVisible ? 'none' : 'block';
-        toggleFilterButton.textContent = isVisible ? 'Show Leisure Finder' : 'Hide Leisure Finder';
-      });
-      
-      leisureForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const day = document.getElementById('day').value;
-        const period = document.getElementById('period').value;
-        
-        if (day && period) {
-          await findLeisureFaculty(day, period);
-        }
-      });
+  <!-- Supabase -->
+  <script src="https://esm.sh/@supabase/supabase-js"></script>
+ <script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+// ---------------- Supabase Configuration ----------------
+const SUPABASE_URL = "https://ucihhvycupjjkmazpfby.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjaWhodnljdXBqamttYXpwZmJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxODQ5MjcsImV4cCI6MjA3Mzc2MDkyN30.XeWpXOmiZS1Z8ejDfnNZ89NiIBoDKTgogOeNDg-Rv8A";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ---------------- DOM Elements ----------------
+const currentDateElement = document.getElementById("datetime");
+
+const currentTeachingTable = document.getElementById("current-teaching").querySelector("tbody");
+const currentFreeTable = document.getElementById("current-free").querySelector("tbody");
+
+const nextTeachingTable = document.getElementById("next-teaching").querySelector("tbody");
+const nextFreeTable = document.getElementById("next-free").querySelector("tbody");
+
+// ---------------- Period Schedule ----------------
+const periodSchedule = [
+  { id: 1, start: "09:20", end: "10:20" },
+  { id: 2, start: "10:20", end: "11:20" },
+  { id: 3, start: "11:20", end: "12:20" },
+  { id: 4, start: "13:10", end: "14:10" },
+  { id: 5, start: "14:10", end: "15:10" },
+  { id: 6, start: "15:10", end: "16:10" },
+];
+
+// ---------------- Utilities ----------------
+function updateDateTime() {
+  const now = new Date();
+  const options = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  };
+  currentDateElement.textContent = now.toLocaleDateString("en-US", options);
+}
+
+function clearTable(tableBody) {
+  tableBody.innerHTML = "";
+}
+
+function insertRow(tableBody, columns) {
+  const row = document.createElement("tr");
+  columns.forEach((col) => {
+    const td = document.createElement("td");
+    td.textContent = col;
+    row.appendChild(td);
+  });
+  tableBody.appendChild(row);
+}
+
+// ---------------- Period Finder ----------------
+function getCurrentDayAndPeriod() {
+  const now = new Date();
+  const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+  const currentTime = now.toTimeString().substring(0, 5);
+
+  let dbDay = currentDay;
+  if (dbDay === 0) dbDay = 7; // Sunday -> 7
+
+  let currentPeriod = null;
+  for (const period of periodSchedule) {
+    if (currentTime >= period.start && currentTime < period.end) {
+      currentPeriod = period.id;
+      break;
     }
-    
-    // Update date and time display
-    function updateDateTime() {
-      const now = new Date();
-      currentDateElement.textContent = now.toLocaleDateString('en-US', { 
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-      }) + ' | ' + now.toLocaleTimeString('en-US', { 
-        hour: '2-digit', minute: '2-digit', second: '2-digit' 
-      });
+  }
+
+  return { day: dbDay, period: currentPeriod };
+}
+
+// ---------------- Fetch Timetable ----------------
+async function getTimetable(day, period) {
+  const { data, error } = await supabase
+    .from("timetable")
+    .select("*")
+    .eq("day_id", day)
+    .eq("period_id", period)
+    .eq("is_active", true);
+
+  if (error) {
+    console.error("Supabase error:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// ---------------- Update Dashboard ----------------
+async function updateDashboard() {
+  const { day, period } = getCurrentDayAndPeriod();
+  if (!period || day > 6) {
+    clearTable(currentTeachingTable);
+    clearTable(currentFreeTable);
+    clearTable(nextTeachingTable);
+    clearTable(nextFreeTable);
+
+    insertRow(currentTeachingTable, ["-", "-", "-", "No session"]);
+    insertRow(currentFreeTable, ["-", "No session"]);
+    insertRow(nextTeachingTable, ["-", "-", "-", "No session"]);
+    insertRow(nextFreeTable, ["-", "No session"]);
+    return;
+  }
+
+  // Current Period
+  const currentData = await getTimetable(day, period);
+  const facultyNames = [...new Set(currentData.map((f) => f.faculty_name))];
+
+  clearTable(currentTeachingTable);
+  clearTable(currentFreeTable);
+
+  facultyNames.forEach((name) => {
+    const entries = currentData.filter((f) => f.faculty_name === name);
+    const isTeaching = entries.some((e) => !e.is_leisure);
+
+    if (isTeaching) {
+      const entry = entries.find((e) => !e.is_leisure);
+      insertRow(currentTeachingTable, [name, entry.subject, entry.classroom, "Teaching"]);
+    } else {
+      insertRow(currentFreeTable, [name, "Free"]);
     }
-    
-    // Get current day and period based on time
-    function getCurrentDayAndPeriod() {
-      const now = new Date();
-      const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-      const currentTime = now.toTimeString().substring(0, 5); // HH:MM format
-      
-      let dbDay = currentDay;
-      if (dbDay === 0) dbDay = 7; // Sunday is not a teaching day
-      
-      let currentPeriod = null;
-      for (const period of periodSchedule) {
-        if (currentTime >= period.start && currentTime < period.end) {
-          currentPeriod = period.id;
-          break;
-        }
-      }
-      
-      return { day: dbDay, period: currentPeriod, time: currentTime };
+  });
+
+  // Next Period
+  const nextPeriod = period + 1;
+  const nextData = await getTimetable(day, nextPeriod);
+  const nextNames = [...new Set(nextData.map((f) => f.faculty_name))];
+
+  clearTable(nextTeachingTable);
+  clearTable(nextFreeTable);
+
+  nextNames.forEach((name) => {
+    const entries = nextData.filter((f) => f.faculty_name === name);
+    const isTeaching = entries.some((e) => !e.is_leisure);
+
+    if (isTeaching) {
+      const entry = entries.find((e) => !e.is_leisure);
+      insertRow(nextTeachingTable, [name, entry.subject, entry.classroom, "Teaching"]);
+    } else {
+      insertRow(nextFreeTable, [name, "Free"]);
     }
-    
-    // Update the main dashboard
-    async function updateDashboard() {
-      try {
-        const { day, period } = getCurrentDayAndPeriod();
-        
-        if (!period || day > 6) {
-          dashboardElement.innerHTML = `<p class="loading">No teaching sessions at this time</p>`;
-          leisureDashboardElement.innerHTML = `<p class="loading">No teaching sessions at this time</p>`;
-          return;
-        }
-        
-        // Fetch active timetable entries
-        const { data, error } = await supabase
-          .from('timetable')
-          .select('*')
-          .eq('day_id', day)
-          .eq('period_id', period)
-          .eq('is_active', true);   // ✅ only active
-        
-        if (error) {
-          console.error('Error fetching data:', error);
-          dashboardElement.innerHTML = '<p class="loading">Error loading data</p>';
-          leisureDashboardElement.innerHTML = '<p class="loading">Error loading data</p>';
-          return;
-        }
-        
-        const teachingTeachers = [];
-        const freeTeachers = [];
-        
-        const facultyNames = [...new Set(data.map(item => item.faculty_name))];
-        
-        for (const name of facultyNames) {
-          const facultyEntries = data.filter(item => item.faculty_name === name);
-          const isTeaching = facultyEntries.some(entry => !entry.is_leisure);
-          
-          if (isTeaching) {
-            const teachingEntry = facultyEntries.find(entry => !entry.is_leisure);
-            teachingTeachers.push({
-              name: name,
-              subject: teachingEntry.subject,
-              classroom: teachingEntry.classroom
-            });
-          } else {
-            freeTeachers.push({ name: name });
-          }
-        }
-        
-        updateTeachingTable(teachingTeachers);
-        updateFreeTable(freeTeachers);
-        
-      } catch (error) {
-        console.error('Error:', error);
-        dashboardElement.innerHTML = '<p class="loading">Error loading data</p>';
-        leisureDashboardElement.innerHTML = '<p class="loading">Error loading data</p>';
-      }
-    }
-    
-    function updateTeachingTable(teachers) {
-      if (teachers.length > 0) {
-        dashboardElement.innerHTML = `
-          <table>
-            <thead>
-              <tr>
-                <th>Faculty Name</th>
-                <th>Subject</th>
-                <th>Classroom</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${teachers.map(teacher => `
-                <tr>
-                  <td>${teacher.name}</td>
-                  <td>${teacher.subject}</td>
-                  <td>${teacher.classroom}</td>
-                  <td><span class="status-badge status-teaching">Teaching</span></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
-      } else {
-        dashboardElement.innerHTML = `<p class="loading">No teachers are currently teaching</p>`;
-      }
-    }
-    
-    function updateFreeTable(teachers) {
-      if (teachers.length > 0) {
-        leisureDashboardElement.innerHTML = `
-          <table>
-            <thead>
-              <tr>
-                <th>Faculty Name</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${teachers.map(teacher => `
-                <tr>
-                  <td>${teacher.name}</td>
-                  <td><span class="status-badge status-free">Free</span></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
-      } else {
-        leisureDashboardElement.innerHTML = `<p class="loading">No teachers are currently free</p>`;
-      }
-    }
-    
-    // Leisure finder
-    async function findLeisureFaculty(day, period) {
-      try {
-        leisureResultsElement.innerHTML = '<p class="loading">Searching...</p>';
-        
-        const { data, error } = await supabase
-          .from('timetable')
-          .select('*')
-          .eq('day_id', day)
-          .eq('period_id', period)
-          .eq('is_active', true);   // ✅ only active
-        
-        if (error) {
-          console.error('Error fetching data:', error);
-          leisureResultsElement.innerHTML = '<p class="loading">Error loading data</p>';
-          return;
-        }
-        
-        const leisureFaculty = [];
-        const facultyNames = [...new Set(data.map(item => item.faculty_name))];
-        
-        for (const name of facultyNames) {
-          const facultyEntries = data.filter(item => item.faculty_name === name);
-          const isFree = facultyEntries.every(entry => entry.is_leisure);
-          
-          if (isFree) {
-            leisureFaculty.push({ name: name });
-          }
-        }
-        
-        if (leisureFaculty.length > 0) {
-          const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-          leisureResultsElement.innerHTML = `
-            <h3>Faculty Free on ${dayNames[day-1]} during Period ${period}</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Faculty Name</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${leisureFaculty.map(teacher => `
-                  <tr>
-                    <td>${teacher.name}</td>
-                    <td><span class="status-badge status-free">Free</span></td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          `;
-        } else {
-          leisureResultsElement.innerHTML = `<p class="loading">No faculty members are free at the selected time</p>`;
-        }
-        
-      } catch (error) {
-        console.error('Error:', error);
-        leisureResultsElement.innerHTML = '<p class="loading">Error loading data</p>';
-      }
-    }
-    
-    initDashboard();
-  </script>
+  });
+}
+
+// ---------------- Auto Refresh ----------------
+document.addEventListener("DOMContentLoaded", () => {
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+
+  updateDashboard();
+  setInterval(updateDashboard, 60000);
+});
+</script>
+
+
+
 </body>
 </html>
