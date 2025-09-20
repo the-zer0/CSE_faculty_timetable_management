@@ -64,6 +64,38 @@
     .status-teaching { background: #e8f5e9; color: #27ae60; }
     .status-free { background: #fdedec; color: #e74c3c; }
 
+    .leisure-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 30px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+    .leisure-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #27ae60;
+      padding-bottom: 8px;
+      color: #2c3e50;
+    }
+
+    form { margin-bottom: 15px; }
+    select, button {
+      padding: 8px 12px;
+      margin-right: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 0.9rem;
+    }
+    button {
+      background: #3498db;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover { background: #2980b9; }
+
     @media (max-width: 768px) {
       .period-inner { grid-template-columns: 1fr; }
     }
@@ -125,170 +157,182 @@
         </div>
       </div>
     </div>
+
+    <!-- Leisure Finder -->
+    <div class="leisure-card">
+      <h2>🎯 Leisure Finder</h2>
+      <form id="leisure-form">
+        <label for="day">Day:</label>
+        <select id="day">
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+        </select>
+
+        <label for="period">Period:</label>
+        <select id="period">
+          <option value="1">Period 1</option>
+          <option value="2">Period 2</option>
+          <option value="3">Period 3</option>
+          <option value="4">Period 4</option>
+          <option value="5">Period 5</option>
+          <option value="6">Period 6</option>
+        </select>
+
+        <button type="submit">Find Free Faculty</button>
+      </form>
+
+      <div id="leisure-results">
+        <p>Select a day and period to search free faculty.</p>
+      </div>
+    </div>
   </div>
 
-  <!-- Supabase -->
-  <script src="https://esm.sh/@supabase/supabase-js"></script>
- <script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
+  <!-- Supabase + Script -->
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-// ---------------- Supabase Configuration ----------------
-const SUPABASE_URL = "https://ucihhvycupjjkmazpfby.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjaWhodnljdXBqamttYXpwZmJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxODQ5MjcsImV4cCI6MjA3Mzc2MDkyN30.XeWpXOmiZS1Z8ejDfnNZ89NiIBoDKTgogOeNDg-Rv8A";
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SUPABASE_URL = "https://ucihhvycupjjkmazpfby.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjaWhodnljdXBqamttYXpwZmJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxODQ5MjcsImV4cCI6MjA3Mzc2MDkyN30.XeWpXOmiZS1Z8ejDfnNZ89NiIBoDKTgogOeNDg-Rv8A";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ---------------- DOM Elements ----------------
-const currentDateElement = document.getElementById("datetime");
+    // DOM Elements
+    const datetimeEl = document.getElementById("datetime");
 
-const currentTeachingTable = document.getElementById("current-teaching").querySelector("tbody");
-const currentFreeTable = document.getElementById("current-free").querySelector("tbody");
+    const currentTeachingBody = document.querySelector("#current-teaching tbody");
+    const currentFreeBody = document.querySelector("#current-free tbody");
+    const nextTeachingBody = document.querySelector("#next-teaching tbody");
+    const nextFreeBody = document.querySelector("#next-free tbody");
 
-const nextTeachingTable = document.getElementById("next-teaching").querySelector("tbody");
-const nextFreeTable = document.getElementById("next-free").querySelector("tbody");
+    const leisureForm = document.getElementById("leisure-form");
+    const leisureResults = document.getElementById("leisure-results");
 
-// ---------------- Period Schedule ----------------
-const periodSchedule = [
-  { id: 1, start: "09:20", end: "10:20" },
-  { id: 2, start: "10:20", end: "11:20" },
-  { id: 3, start: "11:20", end: "12:20" },
-  { id: 4, start: "13:10", end: "14:10" },
-  { id: 5, start: "14:10", end: "15:10" },
-  { id: 6, start: "15:10", end: "16:10" },
-];
+    // Periods
+    const periodSchedule = [
+      { id: 1, start: "09:20", end: "10:20" },
+      { id: 2, start: "10:20", end: "11:20" },
+      { id: 3, start: "11:20", end: "12:20" },
+      { id: 4, start: "13:10", end: "14:10" },
+      { id: 5, start: "14:10", end: "15:10" },
+      { id: 6, start: "15:10", end: "16:10" }
+    ];
 
-// ---------------- Utilities ----------------
-function updateDateTime() {
-  const now = new Date();
-  const options = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  };
-  currentDateElement.textContent = now.toLocaleDateString("en-US", options);
-}
-
-function clearTable(tableBody) {
-  tableBody.innerHTML = "";
-}
-
-function insertRow(tableBody, columns) {
-  const row = document.createElement("tr");
-  columns.forEach((col) => {
-    const td = document.createElement("td");
-    td.textContent = col;
-    row.appendChild(td);
-  });
-  tableBody.appendChild(row);
-}
-
-// ---------------- Period Finder ----------------
-function getCurrentDayAndPeriod() {
-  const now = new Date();
-  const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ...
-  const currentTime = now.toTimeString().substring(0, 5);
-
-  let dbDay = currentDay;
-  if (dbDay === 0) dbDay = 7; // Sunday -> 7
-
-  let currentPeriod = null;
-  for (const period of periodSchedule) {
-    if (currentTime >= period.start && currentTime < period.end) {
-      currentPeriod = period.id;
-      break;
+    // Utils
+    function updateDateTime() {
+      const now = new Date();
+      datetimeEl.textContent =
+        now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) +
+        " | " +
+        now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     }
-  }
 
-  return { day: dbDay, period: currentPeriod };
-}
-
-// ---------------- Fetch Timetable ----------------
-async function getTimetable(day, period) {
-  const { data, error } = await supabase
-    .from("timetable")
-    .select("*")
-    .eq("day_id", day)
-    .eq("period_id", period)
-    .eq("is_active", true);
-
-  if (error) {
-    console.error("Supabase error:", error);
-    return [];
-  }
-
-  return data || [];
-}
-
-// ---------------- Update Dashboard ----------------
-async function updateDashboard() {
-  const { day, period } = getCurrentDayAndPeriod();
-  if (!period || day > 6) {
-    clearTable(currentTeachingTable);
-    clearTable(currentFreeTable);
-    clearTable(nextTeachingTable);
-    clearTable(nextFreeTable);
-
-    insertRow(currentTeachingTable, ["-", "-", "-", "No session"]);
-    insertRow(currentFreeTable, ["-", "No session"]);
-    insertRow(nextTeachingTable, ["-", "-", "-", "No session"]);
-    insertRow(nextFreeTable, ["-", "No session"]);
-    return;
-  }
-
-  // Current Period
-  const currentData = await getTimetable(day, period);
-  const facultyNames = [...new Set(currentData.map((f) => f.faculty_name))];
-
-  clearTable(currentTeachingTable);
-  clearTable(currentFreeTable);
-
-  facultyNames.forEach((name) => {
-    const entries = currentData.filter((f) => f.faculty_name === name);
-    const isTeaching = entries.some((e) => !e.is_leisure);
-
-    if (isTeaching) {
-      const entry = entries.find((e) => !e.is_leisure);
-      insertRow(currentTeachingTable, [name, entry.subject, entry.classroom, "Teaching"]);
-    } else {
-      insertRow(currentFreeTable, [name, "Free"]);
+    function clearTable(tbody) { tbody.innerHTML = ""; }
+    function addRow(tbody, cols) {
+      const tr = document.createElement("tr");
+      cols.forEach(c => {
+        const td = document.createElement("td");
+        td.textContent = c;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
     }
-  });
 
-  // Next Period
-  const nextPeriod = period + 1;
-  const nextData = await getTimetable(day, nextPeriod);
-  const nextNames = [...new Set(nextData.map((f) => f.faculty_name))];
+    function getCurrentDayAndPeriod() {
+      const now = new Date();
+      let day = now.getDay();
+      if (day === 0) day = 7;
+      const time = now.toTimeString().substring(0,5);
 
-  clearTable(nextTeachingTable);
-  clearTable(nextFreeTable);
-
-  nextNames.forEach((name) => {
-    const entries = nextData.filter((f) => f.faculty_name === name);
-    const isTeaching = entries.some((e) => !e.is_leisure);
-
-    if (isTeaching) {
-      const entry = entries.find((e) => !e.is_leisure);
-      insertRow(nextTeachingTable, [name, entry.subject, entry.classroom, "Teaching"]);
-    } else {
-      insertRow(nextFreeTable, [name, "Free"]);
+      let currentPeriod = null;
+      for (const p of periodSchedule) {
+        if (time >= p.start && time < p.end) { currentPeriod = p.id; break; }
+      }
+      return { day, period: currentPeriod };
     }
-  });
-}
 
-// ---------------- Auto Refresh ----------------
-document.addEventListener("DOMContentLoaded", () => {
-  updateDateTime();
-  setInterval(updateDateTime, 1000);
+    async function fetchTimetable(day, period) {
+      const { data, error } = await supabase
+        .from("timetable")
+        .select("*")
+        .eq("day_id", day)
+        .eq("period_id", period)
+        .eq("is_active", true);
 
-  updateDashboard();
-  setInterval(updateDashboard, 60000);
-});
-</script>
+      if (error) { console.error(error); return []; }
+      return data || [];
+    }
 
+    async function updateDashboard() {
+      const { day, period } = getCurrentDayAndPeriod();
+      if (!period || day > 6) return;
 
+      // Current
+      const currentData = await fetchTimetable(day, period);
+      renderData(currentData, currentTeachingBody, currentFreeBody);
 
+      // Next
+      const nextData = await fetchTimetable(day, period+1);
+      renderData(nextData, nextTeachingBody, nextFreeBody);
+    }
+
+    function renderData(data, teachingBody, freeBody) {
+      clearTable(teachingBody);
+      clearTable(freeBody);
+
+      const facultyNames = [...new Set(data.map(d => d.faculty_name))];
+
+      facultyNames.forEach(name => {
+        const entries = data.filter(d => d.faculty_name === name);
+        const isTeaching = entries.some(e => !e.is_leisure);
+
+        if (isTeaching) {
+          const entry = entries.find(e => !e.is_leisure);
+          addRow(teachingBody, [name, entry.subject, entry.classroom, "Teaching"]);
+        } else {
+          addRow(freeBody, [name, "Free"]);
+        }
+      });
+    }
+
+    // Leisure Finder
+    leisureForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const day = document.getElementById("day").value;
+      const period = document.getElementById("period").value;
+
+      leisureResults.innerHTML = "<p>Loading...</p>";
+      const data = await fetchTimetable(day, period);
+
+      const freeFaculty = [];
+      const names = [...new Set(data.map(d => d.faculty_name))];
+
+      names.forEach(name => {
+        const entries = data.filter(d => d.faculty_name === name);
+        const isFree = entries.every(e => e.is_leisure);
+        if (isFree) freeFaculty.push(name);
+      });
+
+      if (freeFaculty.length > 0) {
+        leisureResults.innerHTML = `
+          <table>
+            <thead><tr><th>Faculty</th><th>Status</th></tr></thead>
+            <tbody>
+              ${freeFaculty.map(n => `<tr><td>${n}</td><td><span class="status-badge status-free">Free</span></td></tr>`).join("")}
+            </tbody>
+          </table>`;
+      } else {
+        leisureResults.innerHTML = "<p>No faculty free at this time.</p>";
+      }
+    });
+
+    // Init
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+    updateDashboard();
+    setInterval(updateDashboard, 60000);
+  </script>
 </body>
 </html>
