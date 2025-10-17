@@ -1,0 +1,72 @@
+-- ==============================
+-- 🧩 Timetable Database Schema
+-- For New Project Setup
+-- ==============================
+
+-- Drop tables in correct dependency order (child first)
+drop table if exists timetable cascade;
+drop table if exists periods cascade;
+drop table if exists days cascade;
+
+-- ==============================
+-- 1️⃣ Create Days Table
+-- ==============================
+create table days (
+  id bigint generated always as identity primary key,
+  day_name text unique not null
+);
+
+-- ==============================
+-- 2️⃣ Create Periods Table
+-- ==============================
+create table periods (
+  id bigint generated always as identity primary key,
+  period_name text unique not null,
+  start_time time not null,
+  end_time time not null
+);
+
+-- ==============================
+-- 3️⃣ Create Timetable Table
+-- ==============================
+create table timetable (
+  id bigint generated always as identity primary key,
+  faculty_name text not null,
+  day_id bigint not null references days(id) on delete cascade,
+  period_id bigint not null references periods(id) on delete cascade,
+  is_leisure boolean not null default true,   -- default leisure until filled
+  classroom text,
+  subject text,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
+
+-- Unique constraint to prevent duplicate faculty-period entries
+create unique index timetable_faculty_day_period_idx
+  on timetable (faculty_name, day_id, period_id);
+
+-- ==============================
+-- 4️⃣ Insert Default Data
+-- ==============================
+
+-- Insert Days
+insert into days (day_name)
+values 
+  ('monday'),
+  ('tuesday'),
+  ('wednesday'),
+  ('thursday'),
+  ('friday'),
+  ('saturday');
+
+-- Insert Periods with Time Ranges
+insert into periods (period_name, start_time, end_time)
+values
+  ('period_1', '09:20', '10:20'),
+  ('period_2', '10:20', '11:20'),
+  ('period_3', '11:20', '12:20'),
+  ('period_4', '13:10', '14:10'),
+  ('period_5', '14:10', '15:10'),
+  ('period_6', '15:10', '16:10');
+
+-- ✅ Done: Database structure ready for use
