@@ -40,12 +40,22 @@
       background: #fdedec; color: #e74c3c; padding: 5px 10px;
       border-radius: 20px; font-size: 0.85em;
     }
+    .loading {
+      text-align: center; color: #666; font-style: italic;
+      padding: 20px;
+    }
+    .stats {
+      margin-bottom: 15px; padding: 10px;
+      background: #f8f9fa; border-radius: 4px;
+      text-align: center; font-size: 14px; color: #666;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Manage Faculty Records</h1>
-    <div id="facultyTable">Loading faculty...</div>
+    <div class="stats" id="stats">Loading faculty records...</div>
+    <div id="facultyTable"></div>
   </div>
 
   <script type="module">
@@ -56,90 +66,189 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const facultyTable = document.getElementById('facultyTable');
+    const stats = document.getElementById('stats');
 
-    // Fetch unique faculty names and their status
+    // Function to fetch ALL records with pagination
+    async function fetchAllRecords() {
+      let allRecords = [];
+      let page = 0;
+      const pageSize = 1000; // Supabase's max limit
+      let hasMore = true;
+
+      stats.innerHTML = '<span class="loading">Loading records... (0)</span>';
+
+      while (hasMore) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+        
+        console.log(`Fetching records ${from} to ${to}...`);
+        
+        const { data, error } = await supabase
+          .from('timetable')
+          .select('faculty_name, is_active')
+          .range(from, to);
+
+        if (error) {
+          console.error('Error fetching page:', error);
+          throw error;
+        }
+
+        if (data && data.length > 0) {
+          allRecords = allRecords.concat(data);
+          stats.innerHTML = `<span class="loading">Loading records... (${allRecords.length})</span>`;
+        }
+
+        // Check if we have more records to fetch
+        hasMore = data && data.length === pageSize;
+        page++;
+
+        // Add a small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      console.log(`Total records fetched: ${allRecords.length}`);
+      return allRecords;
+    }
+
+    // Fetch unique faculty names and their status with pagination
     async function loadFaculty() {
-      const { data, error } = await supabase
-        .from('timetable')
-        .select('faculty_name, is_active')
-        .order('faculty_name');
+      try {
+        stats.innerHTML = '<span class="loading">Starting to load all records...</span>';
+        
+        // Fetch ALL records with pagination
+        const allRecords = await fetchAllRecords();
+        
+        stats.innerHTML = '<span class="loading">Processing faculty data...</span>';
 
-      if (error) {
-        console.error(error);
-        facultyTable.innerHTML = '<p>Error loading faculty list</p>';
+        // Deduplicate by faculty_name (take first occurrence for status)
+        const facultyMap = new Map();
+        allRecords.forEach(row => {
+          if (row.faculty_name && !facultyMap.has(row.faculty_name)) {
+            facultyMap.set(row.faculty_name, row.is_active);
+          }
+        });
+
+        const faculty = Array.from(facultyMap.entries()).sort((a, b) => 
+          a[0].localeCompare(b[0])
+        );
+
+        // Update stats
+        stats.innerHTML = `
+          <strong>Total Faculty Members: ${faculty.length}</strong>
+          <br><small>Processed ${allRecords.length} total database records</small>
+          ${faculty.length !== 47 ? 
+            `<br><small style="color: orange;">Expected: 47 | Found: ${faculty.length}</small>` : 
+            `<br><small style="color: green;">✓ All faculty members loaded successfully!</small>`
+          }
+        `;
+
+        if (faculty.length === 0) {
+          facultyTable.innerHTML = '<p>No faculty records found.</p>';
+          return;
+        }
+
+        facultyTable.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Faculty Name</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${faculty.map(([name, active]) => `
+                <tr>
+                  <td>${name}</td>
+                  <td>
+                    <span class="${active ? 'status-active' : 'status-deleted'}">
+                      ${active ? 'Active' : 'Deleted'}
+                    </span>
+                  </td>
+                  <td>
+                    ${active 
+                      ? `<button class="btn btn-delete" data-name="${name}">Delete</button>` 
+                      : `<button class="btn btn-restore" data-name="${name}">Restore</button>`}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+
+        // Attach button listeners
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+          btn.addEventListener('click', () => updateFacultyStatus(btn.dataset.name, false));
+        });
+        document.querySelectorAll('.btn-restore').forEach(btn => {
+          btn.addEventListener('click', () => updateFacultyStatus(btn.dataset.name, true));
+        });
+
+        console.log('Faculty management loaded:', {
+          totalRecords: allRecords.length,
+          facultyCount: faculty.length,
+          facultyList: faculty.map(([name, active]) => ({ name, active }))
+        });
+
+      } catch (error) {
+        console.error('Error loading faculty:', error);
+        stats.innerHTML = `Error loading faculty list: ${error.message}`;
+        facultyTable.innerHTML = '<p>Error loading faculty records. Please check the console.</p>';
+      }
+    }
+
+    // Update faculty active/deleted status with pagination
+    async function updateFacultyStatus(name, isActive) {
+      if (!confirm(`Are you sure you want to ${isActive ? 'restore' : 'delete'} ${name}? This will affect all timetable entries for this faculty member.`)) {
         return;
       }
 
-      // Deduplicate by faculty_name (take first occurrence)
-      const facultyMap = new Map();
-      data.forEach(row => {
-        if (!facultyMap.has(row.faculty_name)) {
-          facultyMap.set(row.faculty_name, row.is_active);
+      try {
+        // Since we need to update ALL records for this faculty, we need to paginate
+        let updatedCount = 0;
+        let page = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        stats.innerHTML = `<span class="loading">Updating records for ${name}... (0 updated)</span>`;
+
+        while (hasMore) {
+          const from = page * pageSize;
+          const to = from + pageSize - 1;
+          
+          const { data, error } = await supabase
+            .from('timetable')
+            .update({ is_active: isActive })
+            .eq('faculty_name', name)
+            .range(from, to);
+
+          if (error) {
+            throw error;
+          }
+
+          // Count how many records were updated in this batch
+          if (data) {
+            updatedCount += data.length;
+            stats.innerHTML = `<span class="loading">Updating records for ${name}... (${updatedCount} updated)</span>`;
+          }
+
+          // Check if we might have more records
+          hasMore = data && data.length === pageSize;
+          page++;
+
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
-      });
 
-      const faculty = Array.from(facultyMap.entries());
+        alert(`Successfully ${isActive ? 'restored' : 'deleted'} ${name}. ${updatedCount} records updated.`);
+        loadFaculty(); // refresh the table
 
-      facultyTable.innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Faculty Name</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${faculty.map(([name, active]) => `
-              <tr>
-                <td>${name}</td>
-                <td>
-                  <span class="${active ? 'status-active' : 'status-deleted'}">
-                    ${active ? 'Active' : 'Deleted'}
-                  </span>
-                </td>
-                <td>
-                  ${active 
-                    ? `<button class="btn btn-delete" data-name="${name}">Delete</button>` 
-                    : `<button class="btn btn-restore" data-name="${name}">Restore</button>`}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-
-      // Attach button listeners
-      document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', () => updateFacultyStatus(btn.dataset.name, false));
-      });
-      document.querySelectorAll('.btn-restore').forEach(btn => {
-        btn.addEventListener('click', () => updateFacultyStatus(btn.dataset.name, true));
-      });
-    }
-
-    // Update faculty active/deleted status
-    async function updateFacultyStatus(name, isActive) {
-      const { error } = await supabase
-        .from('timetable')
-        .update({ is_active: isActive })
-        .eq('faculty_name', name);
-
-      if (error) {
-        alert('Error updating: ' + error.message);
-        console.error(error);
-      } else {
-        alert(`${name} has been ${isActive ? 'restored' : 'deleted'}.`);
-        loadFaculty(); // refresh
+      } catch (error) {
+        console.error('Error updating faculty status:', error);
+        alert('Error updating faculty status: ' + error.message);
       }
     }
 
     loadFaculty();
-  </script>
-  <script>
-    if (!localStorage.getItem("loggedIn")) {
-      window.location.href = "login.html";
-    }
   </script>
 </body>
 </html>
