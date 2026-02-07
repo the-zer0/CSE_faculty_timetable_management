@@ -57,25 +57,36 @@
   </div>
 
   <script>
-    // 🔑 Replace with your Supabase project details
-    const SUPABASE_URL = "https://ucihhvycupjjkmazpfby.supabase.co";
+	const SUPABASE_URL = "https://ucihhvycupjjkmazpfby.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjaWhodnljdXBqamttYXpwZmJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxODQ5MjcsImV4cCI6MjA3Mzc2MDkyN30.XeWpXOmiZS1Z8ejDfnNZ89NiIBoDKTgogOeNDg-Rv8A";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+
+    // ✅ renamed variable
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
 
     async function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       const msg = document.getElementById("msg");
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
 
       if (error) {
         msg.textContent = error.message;
       } else {
         msg.style.color = "green";
         msg.textContent = "✅ Login successful!";
-        localStorage.setItem("loggedIn", "true"); // simple session
-        setTimeout(() => window.location.href = "admin.html", 1000);
+        localStorage.setItem("loggedIn", "true");
+        setTimeout(() => {
+          window.location.href = "admin.html";
+        }, 1000);
       }
     }
   </script>
